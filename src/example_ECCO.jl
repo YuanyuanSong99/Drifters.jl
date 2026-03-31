@@ -174,7 +174,7 @@ function update_FlowFields!(P::uvwMeshArrays,D::NamedTuple,t::Union{AbstractFloa
                                 verbose=false)
 
     t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=true)
-
+    println(t0,t1,m0,m1)
     velocity_factor=1.0
 #    if D.backward_time
 
