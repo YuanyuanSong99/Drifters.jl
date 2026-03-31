@@ -66,7 +66,13 @@ function setup_FlowFields(k::Int,Γ::NamedTuple,func::Function,pth::String;
     γ=Γ.XC.grid
 
     mon=86400.0*365.0/12.0    
-    T=(time_unit==:DateTime ? [DateTime(1999,12,15),DateTime(2000,1,15)] : [-mon/2,mon/2])
+    if backward_time && time_unit==:DateTime
+        T=[DateTime(2000,1,15),DateTime(1999,12,15)]
+    elseif time_unit==:DateTime
+        T=[DateTime(1999,12,15),DateTime(2000,1,15)]
+    else
+        T=(backward_time ? [mon/2,-mon/2] : [-mon/2,mon/2])
+    end
     
     if k==0
         msk=Γ.hFacC
@@ -177,10 +183,6 @@ with a periodicity of 12 months, (3) vertical P.k is selected_
 """
 function update_FlowFields!(P::uvwMeshArrays,D::NamedTuple,t::Union{AbstractFloat,DateTime};
                                 verbose=false)
-    if D.backward_time == true
-        P.T[1],P.T[2]=P.T[2],P.T[1]
-    end
-    
     t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=D.climatology)
     if D.datasets==:OCCA2 && D.year0>0 && eltype(P.T)==DateTime
         m0 = (Year(t0).value - D.year0) * 12 + Month(t0).value
@@ -276,7 +278,11 @@ consecutive records is diff(P.T), (2) monthly climatologies are used
 with a periodicity of 12 months, (3) vertical P.k is selected_
 """
 function update_FlowFields!(I::Individuals)
-    t_ϵ=I.P.T[2]+eps(I.P.T[2])
+    if I.D.backward_time
+        t_ϵ=I.P.T[2]-eps(I.P.T[2])
+    else
+        t_ϵ=I.P.T[2]+eps(I.P.T[2])
+    end
     I.D.🔄(I.P,I.D,t_ϵ)
 end
 
