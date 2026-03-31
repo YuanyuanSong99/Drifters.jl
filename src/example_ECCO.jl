@@ -58,7 +58,7 @@ _Note: the initial implementation approximates month durations to
 365 days / 12 months for simplicity and sets P.T to [-mon/2,mon/2]_
 """
 function setup_FlowFields(k::Int,Γ::NamedTuple,func::Function,pth::String;
-            backward_time=false, time_unit=:DateTime, datasets::Symbol=:ECCO4)
+            backward_time=false, time_unit=:DateTime, datasets::Symbol=:ECCO4, climatology=true)
     XC=exchange(Γ.XC) #add 1 lon point at each edge
     YC=exchange(Γ.YC) #add 1 lat point at each edge
     iDXC=1. ./Γ.DXC
@@ -89,6 +89,7 @@ function setup_FlowFields(k::Int,Γ::NamedTuple,func::Function,pth::String;
     D = (🔄 = update_FlowFields!, pth=pth, datasets=datasets,
          XC=XC, YC=YC, iDXC=iDXC, iDYC=iDYC,
          k=k, msk=msk, exmsk=exmsk, 
+         climatology=climatology,
          θ0=similar(msk), θ1=similar(msk),
          S0=similar(msk), S1=similar(msk))
 
@@ -114,7 +115,7 @@ with a periodicity of 12 months, (3) vertical P.k is selected_
 function update_FlowFields!(P::uvMeshArrays,D::NamedTuple,t::Union{AbstractFloat,DateTime};
                             verbose=false)
 
-    t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=true)
+    t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=D.climatology)
 
     velocity_factor=1.0
 #    if D.backward_time
@@ -173,7 +174,7 @@ with a periodicity of 12 months, (3) vertical P.k is selected_
 function update_FlowFields!(P::uvwMeshArrays,D::NamedTuple,t::Union{AbstractFloat,DateTime};
                                 verbose=false)
 
-    t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=true)
+    t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=D.climatology)
     println(t0,t1,m0,m1)
     velocity_factor=1.0
 #    if D.backward_time
