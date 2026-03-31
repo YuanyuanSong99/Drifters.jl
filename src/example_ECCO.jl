@@ -58,7 +58,7 @@ _Note: the initial implementation approximates month durations to
 365 days / 12 months for simplicity and sets P.T to [-mon/2,mon/2]_
 """
 function setup_FlowFields(k::Int,Γ::NamedTuple,func::Function,pth::String;
-            backward_time=false, time_unit=:DateTime, datasets::Symbol=:ECCO4, climatology=true)
+            backward_time=false, time_unit=:DateTime, datasets::Symbol=:ECCO4, climatology=true, year0::Int=0)
     XC=exchange(Γ.XC) #add 1 lon point at each edge
     YC=exchange(Γ.YC) #add 1 lat point at each edge
     iDXC=1. ./Γ.DXC
@@ -89,7 +89,7 @@ function setup_FlowFields(k::Int,Γ::NamedTuple,func::Function,pth::String;
     D = (🔄 = update_FlowFields!, pth=pth, datasets=datasets,
          XC=XC, YC=YC, iDXC=iDXC, iDYC=iDYC,
          k=k, msk=msk, exmsk=exmsk, 
-         climatology=climatology,
+         climatology=climatology, year0=year0,
          θ0=similar(msk), θ1=similar(msk),
          S0=similar(msk), S1=similar(msk))
 
@@ -116,6 +116,10 @@ function update_FlowFields!(P::uvMeshArrays,D::NamedTuple,t::Union{AbstractFloat
                             verbose=false)
 
     t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=D.climatology)
+    if D.datasets==:OCCA2 && D.year0>0 && eltype(P.T)==DateTime
+        m0 = (Year(t0).value - D.year0) * 12 + Month(t0).value
+        m1 = (Year(t1).value - D.year0) * 12 + Month(t1).value
+    end
 
     velocity_factor=1.0
 #    if D.backward_time
@@ -178,7 +182,11 @@ function update_FlowFields!(P::uvwMeshArrays,D::NamedTuple,t::Union{AbstractFloa
     end
     
     t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=D.climatology)
-    println(t0,t1,m0,m1)
+    if D.datasets==:OCCA2 && D.year0>0 && eltype(P.T)==DateTime
+        m0 = (Year(t0).value - D.year0) * 12 + Month(t0).value
+        m1 = (Year(t1).value - D.year0) * 12 + Month(t1).value
+    end
+    verbose ? println(t0,t1,m0,m1) : nothing
     velocity_factor=1.0
 #    if D.backward_time
 
@@ -317,7 +325,7 @@ end
 
 Set up Global Ocean particle simulation in 2D with seasonally varying flow field.
 """
-function init_FlowFields(; k=1, backward_time=false, time_unit=:DateTime, dpth::String=data_path(:ECCO), datasets::Symbol=:ECCO4, climatology=true)
+function init_FlowFields(; k=1, backward_time=false, time_unit=:DateTime, dpth::String=data_path(:ECCO), datasets::Symbol=:ECCO4, climatology=true, year0::Int=0)
   
   #read grid and set up connections between subdomains
   γ=MeshArrays.GridSpec(ID=:LLC90)
@@ -331,7 +339,7 @@ function init_FlowFields(; k=1, backward_time=false, time_unit=:DateTime, dpth::
 
   #initialize u0,u1 etc arrays
   P,D=setup_FlowFields(k,Γ,func,dpth,
-        backward_time=backward_time, time_unit=time_unit,datasets=datasets, climatology=climatology)
+        backward_time=backward_time, time_unit=time_unit,datasets=datasets, climatology=climatology, year0=year0)
   
   #add background map for plotting
   λ=get_interp_coefficients(Γ)
