@@ -300,6 +300,7 @@ function read_tracers(t::Int,P,D::NamedTuple,varname::String="THETA",datasets::S
         filelist=basename.(Glob.glob("state_3d_set1*.data",D.pth))
         tmp1 = read_data_mdsio(joinpath(D.pth,filelist[t]),Symbol(varname))
         θ=read(tmp1,P.u0.grid)
+        println(joinpath(D.pth,filelist[t])," ",varname)
     else
         error("Invalid data source: $datasets.")
     end
