@@ -173,7 +173,10 @@ with a periodicity of 12 months, (3) vertical P.k is selected_
 """
 function update_FlowFields!(P::uvwMeshArrays,D::NamedTuple,t::Union{AbstractFloat,DateTime};
                                 verbose=false)
-
+    if D.backward_time == true
+        P.T[1],P.T[2]=P.T[2],P.T[1]
+    end
+    
     t0,t1,m0,m1=monthly_records(P.T,t,verbose=verbose,climatology=D.climatology)
     println(t0,t1,m0,m1)
     velocity_factor=1.0
