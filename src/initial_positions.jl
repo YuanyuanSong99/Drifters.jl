@@ -56,6 +56,22 @@ function init_gulf_stream(np ::Int , D::NamedTuple; zs=0:27)
     return DataFrame(x=xyf[1,:],y=xyf[2,:],z=z,fid=xyf[3,:])
 end
 
+"""
+    init_regional_3d(np, D; lons=(-180.0,180.0), lats=(-30.0,30.0), zs=0:27)
+Randomly distribute `np` points within lon/lat ranges and depth levels,
+using `InterpolationFactors` to properly assign face indices on the LLC90 grid.
+"""
+function init_regional_3d(np::Int, D::NamedTuple; lons=(-180.0,180.0), lats=(-30.0,30.0), zs=0:27)
+    lon=rand(2*np)*diff(collect(lons))[1].+lons[1]
+    lat=rand(2*np)*diff(collect(lats))[1].+lats[1]
+    (_,_,_,_,f,x,y)=Drifters.InterpolationFactors(D.Γ,lon,lat)
+    m=findall( (f.!==0).*((!isnan).(x)) )
+    n=findall(Drifters.nearest_to_xy(D.msk,x[m],y[m],f[m]).==1.0)[1:np]
+    xyf=permutedims([x[m[n]] y[m[n]] f[m[n]]])
+    z=zs[1] .+rand(np)*(zs[end]-zs[1])
+    return DataFrame(x=xyf[1,:],y=xyf[2,:],z=z,fid=xyf[3,:])
+end
+
 
 """
     initial_positions(Γ; nf=10000, lon_rng=(-160.0,-159.0), lat_rng=(30.0,31.0))
